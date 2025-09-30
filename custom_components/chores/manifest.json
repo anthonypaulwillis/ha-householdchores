@@ -5,5 +5,6 @@
   "documentation": "https://github.com/anthonypaulwillis/ha-chores",
   "requirements": [],
   "dependencies": [],
-  "config_flow": true
+  "config_flow": true,
+  "logo": "images/logo.png"
 }
