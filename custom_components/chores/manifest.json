@@ -1,7 +1,7 @@
 {
   "domain": "chores",
   "name": "Chores",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "documentation": "https://github.com/anthonypaulwillis/ha-chores",
   "requirements": [],
   "dependencies": [],
