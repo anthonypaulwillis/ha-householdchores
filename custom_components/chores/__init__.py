@@ -1,11 +1,11 @@
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import ConfigType
-from datetime import datetime
+from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.util.dt import utcnow, parse_datetime
 
 from .const import DOMAIN, PLATFORMS, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE
 from .device import ChoreDevice, ScoreDevice
-from homeassistant.const import ATTR_ENTITY_ID
 
 SERVICE_SET_DATETIME = "set_datetime"
 
@@ -20,7 +20,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     device_type = entry.data.get("device_type")
     name = entry.data.get("name")
 
-    # Create device
     if device_type == DEVICE_TYPE_CHORE:
         device = ChoreDevice(name)
     else:
@@ -31,11 +30,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "device_entity_map": {},
     }
 
-    # Register integration-level service
+    # Integration-level service for updating datetimes
     async def async_set_datetime_service(call):
         entity_id = call.data[ATTR_ENTITY_ID]
         value_str = call.data["value"]
-        value = datetime.fromisoformat(value_str)
+        value = parse_datetime(value_str)
 
         entity_obj = hass.data[DOMAIN][entry.entry_id]["device_entity_map"].get(entity_id)
         if entity_obj:
@@ -48,6 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         async_set_datetime_service
     )
 
+    # Forward setups
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
