@@ -1,7 +1,14 @@
 DOMAIN = "chores"
+PLATFORMS = ["sensor", "number", "text", "datetime"]
 
-CONF_TITLE = "title"
-CONF_TYPE = "device_type"
 
 DEVICE_TYPE_CHORE = "chore"
 DEVICE_TYPE_SCORE = "score"
+
+
+ATTR_POINTS = "points"
+ATTR_DAYS = "days"
+ATTR_LAST_DONE_BY = "last_done_by"
+ATTR_LATE_DONE_DATE = "late_done_date"
+ATTR_NEXT_DUE_DATE = "next_due_date"
+ATTR_LAST_DAYS_OVERDUE = "last_days_overdue"
