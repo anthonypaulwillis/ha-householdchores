@@ -1,0 +1,10 @@
+set_value:
+    name: Set Value
+    description: Set a field on a Chore or Score device
+    fields:
+        entity_id:
+            description: Target entity
+            example: sensor.kitchen_cleaning_points
+        value:
+            description: Value to set
+            example: 5
