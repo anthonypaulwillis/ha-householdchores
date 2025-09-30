@@ -1,0 +1,8 @@
+{
+  "name": "chores",
+  "content_in_root": false,
+  "domain": "chores",
+  "homeassistant": "2023.1.0",
+  "version": "0.1.0",
+  "zip_release": false
+}
