@@ -1,37 +1,24 @@
 from __future__ import annotations
-import datetime
-import json
-
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
 from .const import DOMAIN, CONF_TITLE, ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE, ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY
 
+FIELD_LIST = [ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE, ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY]
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback
-):
-    """Set up sensors for a chore entry."""
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    """Set up sensors for a Chore entry."""
     title = entry.data[CONF_TITLE]
     sensors = []
 
-    # Create one entity per field
-    sensors.append(ChoreFieldSensor(title, ATTR_NEXT))
-    sensors.append(ChoreFieldSensor(title, ATTR_LAST))
-    sensors.append(ChoreFieldSensor(title, ATTR_BY))
-    sensors.append(ChoreFieldSensor(title, ATTR_LAST_OVERDUE))
-    sensors.append(ChoreFieldSensor(title, ATTR_NOTIFY))
-    sensors.append(ChoreFieldSensor(title, ATTR_POINTS))
-    sensors.append(ChoreFieldSensor(title, ATTR_DAYS))
-    sensors.append(ChoreFieldSensor(title, ATTR_WHO_NOTIFY))
+    for field in FIELD_LIST:
+        sensor = ChoreFieldSensor(title, field)
+        sensors.append(sensor)
+        hass.data[DOMAIN][entry.entry_id]["entities"].append(sensor)
 
     async_add_entities(sensors)
-
 
 class ChoreFieldSensor(SensorEntity):
     """Sensor representing a single field of a Chore."""
@@ -41,8 +28,6 @@ class ChoreFieldSensor(SensorEntity):
         self._field = field
         self._attr_name = f"{chore_name} {field}"
         self._attr_unique_id = f"{chore_name.lower().replace(' ','_')}_{field}"
-        self._state = STATE_UNKNOWN
-        # Store values here; in future you can add JSON/state update logic
         self._value = None
 
     @property
@@ -57,6 +42,6 @@ class ChoreFieldSensor(SensorEntity):
         }
 
     def update_value(self, value):
-        """Set the value for this entity."""
+        """Update the sensor value dynamically."""
         self._value = value
         self.async_write_ha_state()
