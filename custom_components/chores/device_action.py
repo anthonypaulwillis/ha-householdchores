@@ -10,7 +10,7 @@ ACTION_DO_CHORE = "Do Chore"
 ACTION_UPDATE_POINTS = "Update Points"
 ACTION_UPDATE_DAYS = "Update Days"
 
-# This top-level schema is required by HA for validation
+# top-level schema required by HA
 ACTION_SCHEMA = vol.Schema({
     vol.Required("type"): vol.In([ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]),
     vol.Required(CONF_ENTITY_ID): str,
@@ -19,7 +19,7 @@ ACTION_SCHEMA = vol.Schema({
 })
 
 
-async def async_get_actions(hass: HomeAssistant, device_id: str):
+async def async_get_actions(hass: HomeAssistant, device_id: str) -> List[Dict[str, Any]]:
     """List device actions for a device."""
     actions = []
     for action_type in [ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]:
@@ -28,6 +28,18 @@ async def async_get_actions(hass: HomeAssistant, device_id: str):
             "device_id": device_id
         })
     return actions
+
+
+async def async_get_action_capabilities(hass: HomeAssistant, config: ConfigType) -> Dict[str, Any]:
+    """Return extra fields for an action so HA can render input in the UI."""
+    action_type = config["type"]
+
+    if action_type == ACTION_UPDATE_POINTS:
+        return {"extra_fields": vol.Schema({vol.Required("points"): int})}
+    elif action_type == ACTION_UPDATE_DAYS:
+        return {"extra_fields": vol.Schema({vol.Required("days"): int})}
+    else:
+        return {"extra_fields": vol.Schema({})}  # Do Chore has no extra fields
 
 
 async def async_call_action_from_config(
