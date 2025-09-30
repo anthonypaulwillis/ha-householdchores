@@ -19,11 +19,14 @@ ACTION_SCHEMA = vol.Schema({
 })
 
 
-async def async_get_actions(hass: HomeAssistant, device_id: str) -> List[Dict[str, Any]]:
+async def async_get_actions(hass: HomeAssistant, device_id: str):
     """List device actions for a device."""
     actions = []
     for action_type in [ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]:
-        actions.append({"domain": DOMAIN, "type": action_type, "device_id": device_id})
+        actions.append({
+            "type": action_type,
+            "device_id": device_id
+        })
     return actions
 
 
