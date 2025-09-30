@@ -1,7 +1,6 @@
 DOMAIN = "chores"
 
-CONF_CHORES = "chores"
-CONF_NAME = "name"
+CONF_TITLE = "title"
 
 ATTR_NEXT = "next"
 ATTR_LAST = "last"
