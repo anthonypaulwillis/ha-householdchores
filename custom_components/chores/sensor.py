@@ -2,6 +2,5 @@ from homeassistant.components.sensor import SensorEntity
 from .entity import ChoresEntity
 
 class ChoresSensor(ChoresEntity, SensorEntity):
-    @property
-    def native_value(self):
-        return getattr(self._device, self._attr)
+    def __init__(self, device, attr, name_suffix, entry_id):
+        super().__init__(device, attr, name_suffix, entry_id)
