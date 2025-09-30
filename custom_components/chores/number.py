@@ -7,23 +7,24 @@ from .const import DOMAIN, ATTR_POINTS, ATTR_DAYS
 from .entity import ChoresEntity
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+        return
+
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Both Chore and Score devices have points
     entities.append(ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id))
 
-    # Only Chores have days
     if hasattr(device, "days"):
         entities.append(ChoresNumber(device, ATTR_DAYS, "Days", entry.entry_id))
+
+    for e in entities:
+        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
 
     async_add_entities(entities, True)
 
 
 class ChoresNumber(ChoresEntity, NumberEntity):
-    def __init__(self, device, attr, name_suffix, entry_id):
-        super().__init__(device, attr, name_suffix, entry_id)
-
     @property
     def native_value(self):
         return getattr(self._device, self._attr)
