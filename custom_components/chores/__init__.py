@@ -28,13 +28,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # Store device and entity map under entry ID
     hass.data[DOMAIN][entry.entry_id] = {
         "device": device,
-        "device_entity_map": {}  # will store entity objects later
+        "device_entity_map": {},
+        "entities_added": False
     }
 
     # Forward to platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register service for setting datetime
+    # Register datetime service
     platform = entity_platform.async_get_current_platform()
 
     async def async_set_datetime_service(call):
