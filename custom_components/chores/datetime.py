@@ -13,17 +13,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    if hasattr(device, "late_done_date"):
-        e = ChoresDateTime(device, ATTR_LATE_DONE_DATE, "Late Done Date", entry.entry_id)
-        entities.append(e)
-        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
-
+    # Next Due first
     if hasattr(device, "next_due_date"):
-        e = ChoresDateTime(device, ATTR_NEXT_DUE_DATE, "Next Due Date", entry.entry_id)
-        entities.append(e)
-        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
+        next_due = ChoresDateTime(device, ATTR_NEXT_DUE_DATE, "Next Due Date", entry.entry_id)
+        entities.append(next_due)
+        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][next_due.entity_id] = next_due
+
+    # Last Done second
+    if hasattr(device, "late_done_date"):
+        last_done = ChoresDateTime(device, ATTR_LATE_DONE_DATE, "Last Done Date", entry.entry_id)
+        entities.append(last_done)
+        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][last_done.entity_id] = last_done
 
     async_add_entities(entities, True)
+    # Mark entities added here; number/text will continue adding
     hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
 
