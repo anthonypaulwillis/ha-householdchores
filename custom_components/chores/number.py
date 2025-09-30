@@ -1,6 +1,3 @@
-if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
-    return
-    
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -17,7 +14,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     entities = []
 
     entities.append(ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id))
-
     if hasattr(device, "days"):
         entities.append(ChoresNumber(device, ATTR_DAYS, "Days", entry.entry_id))
 
@@ -25,6 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
 
     async_add_entities(entities, True)
+    hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
 
 class ChoresNumber(ChoresEntity, NumberEntity):
@@ -35,6 +32,3 @@ class ChoresNumber(ChoresEntity, NumberEntity):
     async def async_set_native_value(self, value: float):
         setattr(self._device, self._attr, int(value))
         self.async_write_ha_state()
-
-        
-hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
