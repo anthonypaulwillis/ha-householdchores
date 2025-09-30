@@ -31,6 +31,16 @@ class ChoreFieldSensor(SensorEntity):
         self._value = None
 
     @property
+    def device_info(self):
+        """Return device information for this chore."""
+        return {
+            "identifiers": {(DOMAIN, self._chore_name.lower().replace(" ", "_"))},
+            "name": self._chore_name,
+            "manufacturer": "Household Chores",
+            "model": "Chore Device",
+        }
+
+    @property
     def state(self):
         return self._value if self._value is not None else STATE_UNKNOWN
 
