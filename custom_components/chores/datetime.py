@@ -1,33 +1,31 @@
 from homeassistant.components.datetime import DateTimeEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, ATTR_LATE_DONE_DATE, ATTR_NEXT_DUE_DATE
 from .entity import ChoresEntity
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    if hass.data[DOMAIN][entry.entry_id].get("datetime_entities_added"):
         return
 
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Next Due first
+    # Next Due Date
     if hasattr(device, "next_due_date"):
         next_due = ChoresDateTime(device, ATTR_NEXT_DUE_DATE, "Next Due Date", entry.entry_id)
         entities.append(next_due)
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][next_due.entity_id] = next_due
 
-    # Last Done second
+    # Last Done Date
     if hasattr(device, "late_done_date"):
         last_done = ChoresDateTime(device, ATTR_LATE_DONE_DATE, "Last Done Date", entry.entry_id)
         entities.append(last_done)
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][last_done.entity_id] = last_done
 
     async_add_entities(entities, True)
-    # Mark entities added here; number/text will continue adding
-    hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
+    hass.data[DOMAIN][entry.entry_id]["datetime_entities_added"] = True
 
 
 class ChoresDateTime(ChoresEntity, DateTimeEntity):
