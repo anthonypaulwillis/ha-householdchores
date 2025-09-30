@@ -10,7 +10,7 @@ class ChoresEntity(Entity):
 
     @property
     def unique_id(self):
-        return f"{self._device.name.lower()}_{self._attr}"
+        return f"{self._entry_id}_{self._attr}"
 
     @property
     def name(self):
@@ -23,9 +23,8 @@ class ChoresEntity(Entity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self._device.name)},   # unique per device
+            "identifiers": {(DOMAIN, self._entry_id)},  # 🔑 use entry_id so each added Chore/Score is a Device
             "name": self._device.name,
             "manufacturer": "Household Chores",
-            "model": self._device.__class__.__name__,       # shows ChoreDevice or ScoreDevice
-            "entry_type": None,
+            "model": self._device.__class__.__name__,  # shows ChoreDevice / ScoreDevice
         }
