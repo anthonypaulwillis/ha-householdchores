@@ -1,12 +1,12 @@
 {
   "domain": "chores",
   "name": "Chores",
-  "version": "1.0.9",
-  "documentation": "https://github.com/anthonypaulwillis/ha-householdchores",
-  "requirements": [],
-  "dependencies": [],
-  "codeowners": ["@anthonypaulwillis"],
+  "version": "1.0.10",
   "config_flow": true,
-  "iot_class": "local_polling",
-  "logo": "images/logo.png"
+  "documentation": "https://github.com/anthonypaulwillis/ha-householdchores",
+  "issue_tracker": "https://github.com/anthonypaulwillis/ha-householdchores/issues",
+  "codeowners": ["@anthonypaulwillis"],
+  "iot_class": "local_push",
+  "logo": "logo.png",
+  "requirements": []
 }
