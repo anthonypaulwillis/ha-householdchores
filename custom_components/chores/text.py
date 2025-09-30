@@ -7,19 +7,16 @@ from .const import DOMAIN, ATTR_LAST_DONE_BY
 from .entity import ChoresEntity
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
-        return
-
     device = hass.data[DOMAIN][entry.entry_id]["device"]
-    entities = []
 
+    # Last Done By third
+    entities = []
     if hasattr(device, "last_done_by"):
-        e = ChoresText(device, ATTR_LAST_DONE_BY, "Last Done By", entry.entry_id)
-        entities.append(e)
-        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
+        last_by = ChoresText(device, ATTR_LAST_DONE_BY, "Last Done By", entry.entry_id)
+        entities.append(last_by)
+        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][last_by.entity_id] = last_by
 
     async_add_entities(entities, True)
-    hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
 
 class ChoresText(ChoresEntity, TextEntity):
