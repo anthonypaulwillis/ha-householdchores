@@ -23,8 +23,8 @@ class ChoresEntity(Entity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self._entry_id)},  # 🔑 use entry_id so each added Chore/Score is a Device
+            "identifiers": {(DOMAIN, self._entry_id)},
             "name": self._device.name,
             "manufacturer": "Household Chores",
-            "model": self._device.__class__.__name__,  # shows ChoreDevice / ScoreDevice
+            "model": self._device.__class__.__name__,
         }
