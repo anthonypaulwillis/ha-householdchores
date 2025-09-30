@@ -5,19 +5,20 @@ from .const import DOMAIN
 PLATFORMS = ["sensor"]
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """YAML setup (not used if only config entries are supported)."""
+    """YAML setup (optional)."""
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up chores from a config entry."""
+    """Set up Chores integration from config entry."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
 
+    # Forward to sensors
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Unload chores entry."""
+    """Unload a Chore entry."""
     await hass.config_entries.async_forward_entry_unload(entry, PLATFORMS)
     hass.data[DOMAIN].pop(entry.entry_id)
     return True
