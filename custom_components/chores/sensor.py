@@ -22,23 +22,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class ChoresStatusSensor(ChoresEntity, SensorEntity):
+    """Status sensor for Chores that also updates the device.status attribute."""
+
     @property
     def native_value(self):
         now = datetime.now()
         next_due = getattr(self._device, ATTR_NEXT_DUE_DATE, None)
         last_done = getattr(self._device, ATTR_LATE_DONE_DATE, None)
 
-        if last_done and (now - last_done) < timedelta(minutes=10):
-            return "recent"
+        status = "unknown"
 
-        if next_due:
+        if last_done and (now - last_done) < timedelta(minutes=10):
+            status = "recent"
+        elif next_due:
             if next_due < now:
                 overdue_days = (now - next_due).days
                 if overdue_days > 2:
-                    return "overdue"
+                    status = "overdue"
                 else:
-                    return "due"
+                    status = "due"
             else:
-                return "not due"
+                status = "not due"
 
-        return "unknown"
+        # Update device.status
+        self._device.status = status
+        return status
