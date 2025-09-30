@@ -1,6 +1,3 @@
-if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
-    return
-    
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -11,8 +8,10 @@ from .const import DOMAIN, ATTR_NEXT_DUE_DATE, ATTR_LATE_DONE_DATE, ATTR_STATUS
 from .entity import ChoresEntity
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    device = hass.data[DOMAIN][entry.entry_id]["device"]
+    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+        return
 
+    device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
     # Status sensor
@@ -22,10 +21,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][status.entity_id] = status
 
     async_add_entities(entities, True)
+    hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
 
 class ChoresStatusSensor(ChoresEntity, SensorEntity):
-    """Status sensor for Chores that also updates the device.status attribute."""
+    """Status sensor for Chores that updates device.status."""
 
     @property
     def native_value(self):
@@ -47,9 +47,5 @@ class ChoresStatusSensor(ChoresEntity, SensorEntity):
             else:
                 status = "not due"
 
-        # Update device.status
         self._device.status = status
         return status
-
-        
-hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
