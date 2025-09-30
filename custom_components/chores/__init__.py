@@ -9,6 +9,7 @@ from homeassistant.const import ATTR_ENTITY_ID
 
 SERVICE_SET_DATETIME = "set_datetime"
 
+
 async def async_setup(hass: HomeAssistant, config: ConfigType):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
@@ -28,7 +29,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id] = {
         "device": device,
         "device_entity_map": {},
-        "entities_added": False,
     }
 
     # Register integration-level service
