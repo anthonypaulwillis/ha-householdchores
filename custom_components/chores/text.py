@@ -7,20 +7,21 @@ from .const import DOMAIN, ATTR_LAST_DONE_BY
 from .entity import ChoresEntity
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+        return
+
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Only Chores have Last Done By
     if hasattr(device, "last_done_by"):
-        entities.append(ChoresText(device, ATTR_LAST_DONE_BY, "Last Done By", entry.entry_id))
+        e = ChoresText(device, ATTR_LAST_DONE_BY, "Last Done By", entry.entry_id)
+        entities.append(e)
+        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
 
     async_add_entities(entities, True)
 
 
 class ChoresText(ChoresEntity, TextEntity):
-    def __init__(self, device, attr, name_suffix, entry_id):
-        super().__init__(device, attr, name_suffix, entry_id)
-
     @property
     def native_value(self):
         return getattr(self._device, self._attr)
