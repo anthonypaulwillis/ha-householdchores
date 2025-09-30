@@ -1,4 +1,5 @@
 from datetime import datetime
+from homeassistant.util.dt import utcnow
 
 class ChoreDevice:
     def __init__(self, name: str):
@@ -9,11 +10,10 @@ class ChoreDevice:
         self.late_done_date: datetime | None = None
         self.next_due_date: datetime | None = None
         self.last_days_overdue = 0
-        self.status = "unknown"  # Status updated by sensor or helper
+        self.status = "unknown"
 
     def update_status(self):
-        """Optional helper to recalc status without sensor polling"""
-        now = datetime.now()
+        now = utcnow()
         if self.late_done_date and (now - self.late_done_date).total_seconds() < 600:
             self.status = "recent"
         elif self.next_due_date:
