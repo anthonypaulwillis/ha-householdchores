@@ -1,9 +1,8 @@
-from typing import List, Dict, Any
 import voluptuous as vol
-
-from homeassistant.const import CONF_ENTITY_ID
-from homeassistant.helpers.typing import ConfigType
+from typing import List, Dict, Any
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.const import CONF_ENTITY_ID
 
 from .const import DOMAIN
 
@@ -11,22 +10,29 @@ ACTION_DO_CHORE = "Do Chore"
 ACTION_UPDATE_POINTS = "Update Points"
 ACTION_UPDATE_DAYS = "Update Days"
 
-ACTION_TYPES = [ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]
-
-ACTION_SCHEMA_BASE = {
-    vol.Required("type"): vol.In(ACTION_TYPES),
-    vol.Required(CONF_ENTITY_ID): str,
+# Define schema for each action, this lets HA UI generate fields
+ACTION_SCHEMAS = {
+    ACTION_DO_CHORE: vol.Schema({
+        vol.Required("type"): str,
+        vol.Required(CONF_ENTITY_ID): str,
+    }),
+    ACTION_UPDATE_POINTS: vol.Schema({
+        vol.Required("type"): str,
+        vol.Required(CONF_ENTITY_ID): str,
+        vol.Required("points"): int,
+    }),
+    ACTION_UPDATE_DAYS: vol.Schema({
+        vol.Required("type"): str,
+        vol.Required(CONF_ENTITY_ID): str,
+        vol.Required("days"): int,
+    }),
 }
-
-UPDATE_POINTS_SCHEMA = vol.Schema({**ACTION_SCHEMA_BASE, vol.Required("points"): int})
-UPDATE_DAYS_SCHEMA = vol.Schema({**ACTION_SCHEMA_BASE, vol.Required("days"): int})
-DO_CHORE_SCHEMA = vol.Schema(ACTION_SCHEMA_BASE)
 
 
 async def async_get_actions(hass: HomeAssistant, device_id: str) -> List[Dict[str, Any]]:
     """List device actions for a device."""
     actions = []
-    for action_type in ACTION_TYPES:
+    for action_type in [ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]:
         actions.append({"domain": DOMAIN, "type": action_type, "device_id": device_id})
     return actions
 
