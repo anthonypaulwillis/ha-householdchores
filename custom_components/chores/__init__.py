@@ -28,6 +28,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 def create_score_device(hass: HomeAssistant, user_name: str):
+    """Create a Score device for a user if it does not already exist."""
     if user_name in hass.data["scores"]:
         return
     title_entity = ScoreFieldSensor(user_name, "title", user_name)
