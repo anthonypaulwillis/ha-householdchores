@@ -8,3 +8,16 @@ set_value:
         value:
             description: Value to set
             example: 5
+            
+set_datetime:
+    name: Set Chore Datetime
+    description: Set a datetime field on a Chore device
+    fields:
+        entity_id:
+            description: Target datetime entity (Next Due Date or Late Done Date)
+            example: datetime.kitchen_cleaning_next_due_date
+            required: true
+        value:
+            description: Datetime value to set (ISO 8601 format)
+            example: '2025-10-01T15:00:00'
+            required: true
