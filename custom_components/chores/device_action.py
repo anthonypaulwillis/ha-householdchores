@@ -55,5 +55,18 @@ async def async_call_action_from_config(
     if not entity_id and action_type == ACTION_DO_CHORE:
         dev_registry = await hass.helpers.device_registry.async_get_registry()
         entities = [
-            e.entity_id for e in hass.states.async_entity_ids("sensor")
-            if (dev
+            e.entity_id
+            for e in hass.states.async_entity_ids("sensor")
+            if (dev_registry.async_get_device({(DOMAIN, device_id)}) is not None)
+        ]
+        if entities:
+            entity_id = entities[0]
+
+    if action_type == ACTION_DO_CHORE:
+        await hass.services.async_call(DOMAIN, "do_chore", {"entity_id": entity_id}, context=context)
+    elif action_type == ACTION_UPDATE_POINTS:
+        points = config.get("points", 0)
+        await hass.services.async_call(DOMAIN, "update_points", {"entity_id": entity_id, "points": points}, context=context)
+    elif action_type == ACTION_UPDATE_DAYS:
+        days = config.get("days", 0)
+        await hass.services.async_call(DOMAIN, "update_days", {"entity_id": entity_id, "days": days}, context=context)
