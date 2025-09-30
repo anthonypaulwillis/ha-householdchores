@@ -12,13 +12,11 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Next Due Date
     if hasattr(device, "next_due_date"):
         next_due = ChoresDateTime(device, ATTR_NEXT_DUE_DATE, "Next Due Date", entry.entry_id)
         entities.append(next_due)
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][next_due.entity_id] = next_due
 
-    # Last Done Date
     if hasattr(device, "late_done_date"):
         last_done = ChoresDateTime(device, ATTR_LATE_DONE_DATE, "Last Done Date", entry.entry_id)
         entities.append(last_done)
