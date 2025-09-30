@@ -1,10 +1,11 @@
 {
   "domain": "chores",
   "name": "Chores",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "documentation": "https://github.com/anthonypaulwillis/ha-chores",
   "requirements": [],
   "dependencies": [],
   "config_flow": true,
+  "iot_class": "local_polling",
   "logo": "images/logo.png"
 }
