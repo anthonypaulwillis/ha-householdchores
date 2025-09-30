@@ -12,10 +12,7 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Points
     entities.append(ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id))
-
-    # Days
     if hasattr(device, "days"):
         entities.append(ChoresNumber(device, ATTR_DAYS, "Days", entry.entry_id))
 
