@@ -1,3 +1,6 @@
+if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+    return
+    
 from homeassistant.components.text import TextEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -29,3 +32,6 @@ class ChoresText(ChoresEntity, TextEntity):
     async def async_set_value(self, value: str):
         setattr(self._device, self._attr, value)
         self.async_write_ha_state()
+
+        
+hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
