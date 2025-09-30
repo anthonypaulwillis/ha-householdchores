@@ -31,9 +31,10 @@ class ChoresNumber(ChoresEntity, NumberEntity):
     @property
     def native_value(self):
         return getattr(self._device, self._attr)
-        
-hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
     async def async_set_native_value(self, value: float):
         setattr(self._device, self._attr, int(value))
         self.async_write_ha_state()
+
+        
+hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
