@@ -7,13 +7,12 @@ from .const import DOMAIN, ATTR_POINTS, ATTR_DAYS
 from .entity import ChoresEntity
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
-        return
-
     device = hass.data[DOMAIN][entry.entry_id]["device"]
-    entities = []
 
-    entities.append(ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id))
+    # Points fourth
+    entities = [ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id)]
+
+    # Days fifth
     if hasattr(device, "days"):
         entities.append(ChoresNumber(device, ATTR_DAYS, "Days", entry.entry_id))
 
@@ -21,13 +20,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
 
     async_add_entities(entities, True)
-    hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
 
 class ChoresNumber(ChoresEntity, NumberEntity):
+    def __init__(self, device, attr, name_suffix, entry_id):
+        super().__init__(device, attr, name_suffix, entry_id)
+        if attr == ATTR_POINTS:
+            self._max = 20
+        elif attr == ATTR_DAYS:
+            self._max = 365
+        else:
+            self._max = None
+
     @property
     def native_value(self):
         return getattr(self._device, self._attr)
+
+    @property
+    def native_max_value(self):
+        return self._max
 
     async def async_set_native_value(self, value: float):
         setattr(self._device, self._attr, int(value))
