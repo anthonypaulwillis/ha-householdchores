@@ -1,0 +1,13 @@
+{
+  "device_automation": {
+    "action_type": {
+      "do_chore": "Do Chore",
+      "update_points": "Update Points",
+      "update_days": "Update Days"
+    },
+    "action_fields": {
+      "points": "Points",
+      "days": "Days"
+    }
+  }
+}
