@@ -1,14 +1,16 @@
 from homeassistant.components.sensor import SensorEntity
-from .const import DOMAIN
+from .const import DOMAIN, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE
 
-class ChoreFieldSensor(SensorEntity):
-    """A sensor entity for a Chore field."""
 
-    def __init__(self, chore_name: str, field: str, value):
-        self._chore_name = chore_name
+class BaseFieldSensor(SensorEntity):
+    """Base sensor for Chores integration."""
+
+    def __init__(self, device_name: str, field: str, value, device_type: str):
+        self._device_name = device_name
         self._field = field
-        self._attr_name = f"{chore_name} {field.capitalize()}"
-        self._attr_unique_id = f"{DOMAIN}_{chore_name}_{field}"
+        self._device_type = device_type
+        self._attr_name = f"{device_name} {field.capitalize()}"
+        self._attr_unique_id = f"{DOMAIN}_{device_type}_{device_name}_{field}"
         self._attr_native_value = value
 
     @property
@@ -20,20 +22,25 @@ class ChoreFieldSensor(SensorEntity):
         self.async_write_ha_state()
 
 
-class ScoreFieldSensor(SensorEntity):
-    """A sensor entity for a Score field."""
+def create_entities(device_name: str, device_type: str):
+    """Return the correct set of entities based on device type."""
+    entities = []
 
-    def __init__(self, user_name: str, field: str, value):
-        self._user_name = user_name
-        self._field = field
-        self._attr_name = f"{user_name} {field.capitalize()}"
-        self._attr_unique_id = f"{DOMAIN}_score_{user_name}_{field}"
-        self._attr_native_value = value
+    if device_type == DEVICE_TYPE_CHORE:
+        for field, default in [
+            ("next", None),
+            ("last", None),
+            ("by", None),
+            ("overdue", 0),
+            ("points", 0),
+            ("days", 0),
+        ]:
+            entities.append(BaseFieldSensor(device_name, field, default, device_type))
 
-    @property
-    def native_value(self):
-        return self._attr_native_value
+    elif device_type == DEVICE_TYPE_SCORE:
+        for field, default in [
+            ("points", 0),
+        ]:
+            entities.append(BaseFieldSensor(device_name, field, default, device_type))
 
-    async def async_set_value(self, value):
-        self._attr_native_value = value
-        self.async_write_ha_state()
+    return entities
