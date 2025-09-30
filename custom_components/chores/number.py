@@ -1,18 +1,21 @@
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, ATTR_POINTS, ATTR_DAYS
 from .entity import ChoresEntity
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    if hass.data[DOMAIN][entry.entry_id].get("number_entities_added"):
+        return
+
     device = hass.data[DOMAIN][entry.entry_id]["device"]
+    entities = []
 
-    # Points fourth
-    entities = [ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id)]
+    # Points
+    entities.append(ChoresNumber(device, ATTR_POINTS, "Points", entry.entry_id))
 
-    # Days fifth
+    # Days
     if hasattr(device, "days"):
         entities.append(ChoresNumber(device, ATTR_DAYS, "Days", entry.entry_id))
 
@@ -20,6 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         hass.data[DOMAIN][entry.entry_id]["device_entity_map"][e.entity_id] = e
 
     async_add_entities(entities, True)
+    hass.data[DOMAIN][entry.entry_id]["number_entities_added"] = True
 
 
 class ChoresNumber(ChoresEntity, NumberEntity):
