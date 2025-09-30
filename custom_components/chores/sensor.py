@@ -1,7 +1,8 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from datetime import datetime, timedelta
+from homeassistant.util.dt import utcnow
+from datetime import timedelta
 
 from .const import DOMAIN, ATTR_NEXT_DUE_DATE, ATTR_LATE_DONE_DATE, ATTR_STATUS
 from .entity import ChoresEntity
@@ -13,7 +14,6 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
     device = hass.data[DOMAIN][entry.entry_id]["device"]
     entities = []
 
-    # Status sensor first
     status = ChoresStatusSensor(device, ATTR_STATUS, "Status", entry.entry_id)
     entities.append(status)
     hass.data[DOMAIN][entry.entry_id]["device_entity_map"][status.entity_id] = status
@@ -25,7 +25,7 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
 class ChoresStatusSensor(ChoresEntity, SensorEntity):
     @property
     def native_value(self):
-        now = datetime.now()
+        now = utcnow()
         next_due = getattr(self._device, ATTR_NEXT_DUE_DATE, None)
         last_done = getattr(self._device, ATTR_LATE_DONE_DATE, None)
 
@@ -36,10 +36,7 @@ class ChoresStatusSensor(ChoresEntity, SensorEntity):
         elif next_due:
             if next_due < now:
                 overdue_days = (now - next_due).days
-                if overdue_days > 2:
-                    status = "overdue"
-                else:
-                    status = "due"
+                status = "overdue" if overdue_days > 2 else "due"
             else:
                 status = "not due"
 
