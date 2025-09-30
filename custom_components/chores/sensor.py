@@ -13,9 +13,20 @@ class BaseFieldSensor(SensorEntity):
         self._device_name = device_name
         self._field = field
         self._device_type = device_type
+        self._entry_id = entry_id
+
         self._attr_name = f"{device_name} {field.capitalize()}"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_{field}"
         self._attr_native_value = value
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self._entry_id)},
+            "name": self._device_name,
+            "manufacturer": "Household",
+            "model": self._device_type.capitalize(),
+        }
 
     @property
     def native_value(self):
