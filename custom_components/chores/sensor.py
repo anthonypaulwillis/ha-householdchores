@@ -1,64 +1,90 @@
-from __future__ import annotations
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import STATE_UNKNOWN
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN, CONF_TITLE, ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE, ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY
+from homeassistant.core import HomeAssistant, ServiceCall
+from .const import DOMAIN, ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_OVERDUE, ATTR_POINTS, ATTR_DAYS
 
-FIELD_LIST = [
-    ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE,
-    ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY
-]
+SERVICE_DO_CHORE = "do_chore"
+SERVICE_UPDATE_POINTS = "update_points"
+SERVICE_UPDATE_DAYS = "update_days"
+SERVICE_SCORE_OVERRIDE = "score_override"
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    """Set up sensors for a Chore entry."""
-    title = entry.data[CONF_TITLE]
-    sensors = []
+def async_register_services(hass: HomeAssistant):
+    """Register Chores services."""
 
-    # Keep track of entities in hass.data for service updates
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN].setdefault(entry.entry_id, {"entities": []})
+    async def handle_do_chore(call: ServiceCall):
+        chore_name = call.data["chore"]
+        user_name = call.data.get("user", "Unknown")
+        from datetime import datetime, timedelta
 
-    for field in FIELD_LIST:
-        sensor = ChoreFieldSensor(title, field)
-        sensors.append(sensor)
-        hass.data[DOMAIN][entry.entry_id]["entities"].append(sensor)
+        # Find the chore entry and entities
+        for entry in hass.data[DOMAIN].values():
+            for entity in entry.get("entities", []):
+                if entity._chore_name != chore_name:
+                    continue
 
-    async_add_entities(sensors)
+                now = datetime.now()
 
-class ChoreFieldSensor(SensorEntity):
-    """Sensor representing a single field of a Chore."""
+                if entity._field == ATTR_BY:
+                    entity.update_value(user_name)
 
-    def __init__(self, chore_name: str, field: str):
-        self._chore_name = chore_name
-        self._field = field
-        self._attr_name = f"{chore_name} {field}"
-        self._attr_unique_id = f"{chore_name.lower().replace(' ','_')}_{field}"
-        self._value = STATE_UNKNOWN
+                elif entity._field == ATTR_LAST:
+                    entity.update_value(now.isoformat())
 
-    @property
-    def state(self):
-        return self._value
+                elif entity._field == ATTR_NEXT:
+                    # Find the days entity to calculate next
+                    days_entity = next((e for e in entry["entities"] if e._field == ATTR_DAYS), None)
+                    days = int(days_entity.state) if days_entity else 0
+                    next_time = now + timedelta(days=days)
+                    entity.update_value(next_time.isoformat())
 
-    @property
-    def extra_state_attributes(self):
-        return {
-            "chore": self._chore_name,
-            "field": self._field
-        }
+                elif entity._field == ATTR_OVERDUE:
+                    # Calculate overdue
+                    next_entity = next((e for e in entry["entities"] if e._field == ATTR_NEXT), None)
+                    if next_entity:
+                        next_dt = datetime.fromisoformat(next_entity.state)
+                        overdue_days = round((now - next_dt).total_seconds() / (60*60*24))
+                        entity.update_value(overdue_days)
 
-    @property
-    def device_info(self):
-        """Group all entities under a single Chore device."""
-        return {
-            "identifiers": {(DOMAIN, self._chore_name.lower().replace(" ", "_"))},
-            "name": self._chore_name,
-            "manufacturer": "Household Chores",
-            "model": "Chore Device",
-        }
+                elif entity._field == ATTR_POINTS:
+                    points_entity = next((e for e in entry["entities"] if e._field == ATTR_POINTS), None)
+                    # Will be used to update Score device later
+                    points = int(points_entity.state) if points_entity else 0
 
-    def update_value(self, value):
-        """Update the sensor value dynamically."""
-        self._value = value
-        self.async_write_ha_state()
+        # Update Score device for this user
+        score_entry = hass.data.get("scores", {}).get(user_name)
+        if score_entry:
+            score_points_entity = next((e for e in score_entry["entities"] if e._field == ATTR_POINTS), None)
+            if score_points_entity:
+                score_points_entity.update_value(
+                    int(score_points_entity.state or 0) + points
+                )
+
+    async def handle_update_points(call: ServiceCall):
+        chore_name = call.data["chore"]
+        points_value = int(call.data["points"])
+
+        for entry in hass.data[DOMAIN].values():
+            for entity in entry.get("entities", []):
+                if entity._chore_name == chore_name and entity._field == ATTR_POINTS:
+                    entity.update_value(points_value)
+
+    async def handle_update_days(call: ServiceCall):
+        chore_name = call.data["chore"]
+        days_value = int(call.data["days"])
+
+        for entry in hass.data[DOMAIN].values():
+            for entity in entry.get("entities", []):
+                if entity._chore_name == chore_name and entity._field == ATTR_DAYS:
+                    entity.update_value(days_value)
+
+    async def handle_score_override(call: ServiceCall):
+        user_name = call.data["user"]
+        new_points = int(call.data["points"])
+        score_entry = hass.data.get("scores", {}).get(user_name)
+        if score_entry:
+            score_entity = next((e for e in score_entry["entities"] if e._field == ATTR_POINTS), None)
+            if score_entity:
+                score_entity.update_value(new_points)
+
+    hass.services.async_register(DOMAIN, SERVICE_DO_CHORE, handle_do_chore)
+    hass.services.async_register(DOMAIN, SERVICE_UPDATE_POINTS, handle_update_points)
+    hass.services.async_register(DOMAIN, SERVICE_UPDATE_DAYS, handle_update_days)
+    hass.services.async_register(DOMAIN, SERVICE_SCORE_OVERRIDE, handle_score_override)
