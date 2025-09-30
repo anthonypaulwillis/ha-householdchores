@@ -1,3 +1,6 @@
+if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+    return
+
 from homeassistant.components.datetime import DateTimeEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -31,3 +34,5 @@ class ChoresDateTime(ChoresEntity, DateTimeEntity):
     async def async_set_value(self, value):
         setattr(self._device, self._attr, value)
         self.async_write_ha_state()
+        
+hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
