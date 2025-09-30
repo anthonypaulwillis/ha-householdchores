@@ -6,12 +6,19 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, CONF_TITLE, ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE, ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY
 
-FIELD_LIST = [ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE, ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY]
+FIELD_LIST = [
+    ATTR_NEXT, ATTR_LAST, ATTR_BY, ATTR_LAST_OVERDUE,
+    ATTR_NOTIFY, ATTR_POINTS, ATTR_DAYS, ATTR_WHO_NOTIFY
+]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up sensors for a Chore entry."""
     title = entry.data[CONF_TITLE]
     sensors = []
+
+    # Keep track of entities in hass.data for service updates
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault(entry.entry_id, {"entities": []})
 
     for field in FIELD_LIST:
         sensor = ChoreFieldSensor(title, field)
@@ -28,27 +35,27 @@ class ChoreFieldSensor(SensorEntity):
         self._field = field
         self._attr_name = f"{chore_name} {field}"
         self._attr_unique_id = f"{chore_name.lower().replace(' ','_')}_{field}"
-        self._value = None
-
-    @property
-    def device_info(self):
-        """Return device information for this chore."""
-        return {
-            "identifiers": {(DOMAIN, self._chore_name.lower().replace(" ", "_"))},
-            "name": self._chore_name,
-            "manufacturer": "Household Chores",
-            "model": "Chore Device",
-        }
+        self._value = STATE_UNKNOWN
 
     @property
     def state(self):
-        return self._value if self._value is not None else STATE_UNKNOWN
+        return self._value
 
     @property
     def extra_state_attributes(self):
         return {
             "chore": self._chore_name,
             "field": self._field
+        }
+
+    @property
+    def device_info(self):
+        """Group all entities under a single Chore device."""
+        return {
+            "identifiers": {(DOMAIN, self._chore_name.lower().replace(" ", "_"))},
+            "name": self._chore_name,
+            "manufacturer": "Household Chores",
+            "model": "Chore Device",
         }
 
     def update_value(self, value):
