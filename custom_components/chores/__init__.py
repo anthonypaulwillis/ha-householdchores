@@ -9,12 +9,13 @@ from .services import async_register_services
 
 PLATFORMS = ["sensor"]
 
-
 async def async_setup(hass: HomeAssistant, config: dict):
+    """Set up the Chores integration."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Set up a Chore or Score device from a config entry."""
     title = entry.data[CONF_TITLE]
     device_type = entry.data[CONF_TYPE]
 
@@ -31,13 +32,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         model=device_type.capitalize(),
     )
 
+    # Register Chores services
     async_register_services(hass)
 
+    # Forward setup to sensor platform
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
     await hass.config_entries.async_forward_entry_unload(entry, PLATFORMS)
     hass.data[DOMAIN].pop(entry.entry_id, None)
     return True
