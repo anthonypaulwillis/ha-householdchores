@@ -6,14 +6,15 @@ from homeassistant.const import CONF_ENTITY_ID
 
 from .const import DOMAIN
 
+# Capitalized names for UI
 ACTION_DO_CHORE = "Do Chore"
 ACTION_UPDATE_POINTS = "Update Points"
 ACTION_UPDATE_DAYS = "Update Days"
 
-# top-level schema required by HA
+# Top-level schema required by HA
 ACTION_SCHEMA = vol.Schema({
     vol.Required("type"): vol.In([ACTION_DO_CHORE, ACTION_UPDATE_POINTS, ACTION_UPDATE_DAYS]),
-    vol.Required(CONF_ENTITY_ID): str,
+    vol.Optional(CONF_ENTITY_ID): str,  # optional because Do Chore will auto-select entity
     vol.Optional("points"): int,
     vol.Optional("days"): int,
 })
@@ -31,7 +32,7 @@ async def async_get_actions(hass: HomeAssistant, device_id: str) -> List[Dict[st
 
 
 async def async_get_action_capabilities(hass: HomeAssistant, config: ConfigType) -> Dict[str, Any]:
-    """Return extra fields for an action so HA can render input in the UI."""
+    """Return extra fields for an action so HA can render numeric input in UI."""
     action_type = config["type"]
 
     if action_type == ACTION_UPDATE_POINTS:
@@ -39,7 +40,8 @@ async def async_get_action_capabilities(hass: HomeAssistant, config: ConfigType)
     elif action_type == ACTION_UPDATE_DAYS:
         return {"extra_fields": vol.Schema({vol.Required("days"): int})}
     else:
-        return {"extra_fields": vol.Schema({})}  # Do Chore has no extra fields
+        # Do Chore: auto-select the entity, no extra fields
+        return {"extra_fields": vol.Schema({})}
 
 
 async def async_call_action_from_config(
@@ -50,7 +52,20 @@ async def async_call_action_from_config(
 ):
     """Execute a device action."""
     action_type = config["type"]
-    entity_id = config[CONF_ENTITY_ID]
+    device_id = config["device_id"]
+
+    # Find the primary chore entity for this device
+    # We assume the first entity of type 'next' belongs to the chore device
+    entity_id = config.get(CONF_ENTITY_ID)
+    if not entity_id and action_type == ACTION_DO_CHORE:
+        # Look up all entities for this device
+        dev_registry = await hass.helpers.device_registry.async_get_registry()
+        entities = [
+            e.entity_id for e in hass.states.async_entity_ids("sensor")
+            if dev_registry.async_get_entity(e).device_id == device_id
+        ]
+        if entities:
+            entity_id = entities[0]  # auto-pick first entity
 
     if action_type == ACTION_DO_CHORE:
         await hass.services.async_call(DOMAIN, "do_chore", {"entity_id": entity_id}, context=context)
