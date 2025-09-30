@@ -1,36 +1,42 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from .const import DOMAIN, CONF_TITLE
+from homeassistant.helpers import device_registry as dr
+
+from .const import DOMAIN, CONF_TITLE, CONF_TYPE
+from .sensor import create_entities
 from .services import async_register_services
-from .sensor import ScoreFieldSensor, ChoreFieldSensor
 
 PLATFORMS = ["sensor"]
+
 
 async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     title = entry.data[CONF_TITLE]
+    device_type = entry.data[CONF_TYPE]
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN].setdefault(entry.entry_id, {"title": title, "entities": []})
+    hass.data[DOMAIN][entry.entry_id] = {"title": title, "type": device_type}
 
-    hass.data.setdefault("scores", {})
+    # Register device in Device Registry
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        manufacturer="Household",
+        name=title,
+        model=device_type.capitalize(),
+    )
 
     async_register_services(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_forward_entry_unload(entry, PLATFORMS)
     hass.data[DOMAIN].pop(entry.entry_id, None)
     return True
-
-def create_score_device(hass: HomeAssistant, user_name: str):
-    """Create a Score device for a user if it does not already exist."""
-    if user_name in hass.data["scores"]:
-        return
-    title_entity = ScoreFieldSensor(user_name, "title", user_name)
-    points_entity = ScoreFieldSensor(user_name, "points", 0)
-    hass.data["scores"][user_name] = {"entities": [title_entity, points_entity]}
