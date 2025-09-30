@@ -1,3 +1,6 @@
+if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+    return
+    
 from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -28,6 +31,8 @@ class ChoresNumber(ChoresEntity, NumberEntity):
     @property
     def native_value(self):
         return getattr(self._device, self._attr)
+        
+hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
 
     async def async_set_native_value(self, value: float):
         setattr(self._device, self._attr, int(value))
