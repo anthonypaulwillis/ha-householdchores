@@ -1,3 +1,6 @@
+if hass.data[DOMAIN][entry.entry_id].get("entities_added"):
+    return
+    
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -47,3 +50,6 @@ class ChoresStatusSensor(ChoresEntity, SensorEntity):
         # Update device.status
         self._device.status = status
         return status
+
+        
+hass.data[DOMAIN][entry.entry_id]["entities_added"] = True
