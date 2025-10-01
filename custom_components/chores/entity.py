@@ -46,9 +46,13 @@ class ChoresEntity(RestoreEntity):
                     value = attr
             setattr(self._device, self._attr_name, value)
 
-    @callback
-    def async_update_device(self, value):
+    async def async_set_native_value(self, value):
         setattr(self._device, self._attr_name, value)
+        # Persist to ConfigEntry options
+        entry = self.hass.data["chores"][self._entry_id]["entry"]
+        options = dict(entry.options)
+        options[self._attr_name] = value.isoformat() if hasattr(value, "isoformat") else value
+        await self.hass.config_entries.async_update_entry(entry, options=options)
         self.async_write_ha_state()
         if hasattr(self._device, "status_sensor_entity") and self._device.status_sensor_entity:
             self._device.status_sensor_entity.async_write_ha_state()
