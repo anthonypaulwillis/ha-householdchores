@@ -31,7 +31,4 @@ class ChoresNumberEntity(ChoresEntity, NumberEntity):
         return getattr(self._device, self._attr_name)
 
     async def async_set_native_value(self, value: float):
-        setattr(self._device, self._attr_name, value)
-        self.async_write_ha_state()
-        if hasattr(self._device, "status_sensor_entity") and self._device.status_sensor_entity:
-            self._device.status_sensor_entity.async_write_ha_state()
+        await super().async_set_native_value(value)
