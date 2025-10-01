@@ -1,50 +1,41 @@
 set_value:
   name: Set Value
-  description: Set a field on a Chore or Score device
+  description: Set a numeric or text field on a Chore or Score device
   fields:
-    entity_id:
-      name: Target Entity
-      description: Choose a number (points/days) or text (last done by) entity
-      required: true
+    entity:
+      description: Target entity (Number or Text)
+      example: number.kitchen_cleaning_points
       selector:
         entity:
-          domain:
-            - number
-            - text
+          domain: ["number", "text"]
     value:
-      name: Value
-      description: The new value to set
+      description: Value to set
+      example: 5
       required: true
-      selector:
-        text: {}  # UI will auto-adapt based on entity (text/number)
 
 set_datetime:
   name: Set Chore Datetime
   description: Set a datetime field on a Chore device
   fields:
-    entity_id:
-      name: Target Datetime
-      description: Pick a datetime entity (Next Due Date or Last Done Date)
-      required: true
+    entity:
+      description: Target datetime entity (Next Due Date or Last Done Date)
+      example: datetime.kitchen_cleaning_next_due_date
       selector:
         entity:
-          domain: datetime
-    value:
-      name: New Date/Time
-      description: The datetime to set
+          domain: ["datetime"]
       required: true
-      selector:
-        datetime: {}
-
+    value:
+      description: Datetime value to set (ISO 8601 format)
+      example: '2025-10-01T15:00:00'
+      required: true
 
 complete_chore:
   name: Complete Chore
-  description: Mark a chore as completed now and update due dates
+  description: Marks a Chore as completed, updates next due date, and adds points to the user’s Score
   fields:
-    device_id:
-      name: Chore device
-      description: The Chore device to complete
-      required: true
+    device:
+      description: Chore device to complete
       selector:
         device:
           integration: chores
+      required: true
