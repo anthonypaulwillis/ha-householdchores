@@ -1,8 +1,9 @@
 from homeassistant.helpers.entity import RestoreEntity
 from homeassistant.core import callback
+from homeassistant.util.dt import parse_datetime
 
 class ChoresEntity(RestoreEntity):
-    """Base entity for Chores integration with state restoration."""
+    """Base entity with persistence and reactive updates."""
 
     def __init__(self, device, attr_name: str, friendly_name: str, entry_id: str):
         self._device = device
@@ -27,6 +28,7 @@ class ChoresEntity(RestoreEntity):
         if last_state := await self.async_get_last_state():
             value = last_state.state
             attr = getattr(self._device, self._attr_name, None)
+            # Handle type conversion
             if isinstance(attr, int):
                 try:
                     value = int(value)
@@ -35,6 +37,11 @@ class ChoresEntity(RestoreEntity):
             elif isinstance(attr, float):
                 try:
                     value = float(value)
+                except Exception:
+                    value = attr
+            elif hasattr(attr, "isoformat"):
+                try:
+                    value = parse_datetime(value)
                 except Exception:
                     value = attr
             setattr(self._device, self._attr_name, value)
