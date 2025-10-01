@@ -14,21 +14,10 @@ SERVICE_COMPLETE_CHORE = "complete_chore"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):
-    """Set up the Chores integration and create Score devices for all HA users."""
+    """Set up the Chores integration."""
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
-
-    # Create Score devices for all HA users if they don't already exist
-    users = await hass.auth.async_get_users()
-    for user in users:
-        if not any(
-            isinstance(d["device"], ScoreDevice) and d["device"].name == user.name
-            for d in hass.data[DOMAIN].values()
-        ):
-            sdev = ScoreDevice(user.name)
-            fake_entry_id = f"auto_score_{user.id}"
-            hass.data[DOMAIN][fake_entry_id] = {"device": sdev, "device_entity_map": {}}
-
+        hass.data[DOMAIN]["score_devices_created"] = False
     return True
 
 
@@ -47,6 +36,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "device_entity_map": {},
     }
 
+    # --- Auto-create Score devices once ---
+    if not hass.data[DOMAIN]["score_devices_created"]:
+        users = await hass.auth.async_get_users()
+        for user in users:
+            if not any(
+                isinstance(d["device"], ScoreDevice) and d["device"].name == user.name
+                for d in hass.data[DOMAIN].values()
+            ):
+                sdev = ScoreDevice(user.name)
+                fake_entry_id = f"auto_score_{user.id}"
+                hass.data[DOMAIN][fake_entry_id] = {"device": sdev, "device_entity_map": {}}
+                # Forward setup to platforms if necessary
+                await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        hass.data[DOMAIN]["score_devices_created"] = True
+
     # --- Service: set_value ---
     async def async_set_value_service(call):
         entity_id = call.data[ATTR_ENTITY_ID]
@@ -56,6 +60,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if entity_obj:
             await entity_obj.async_set_value(value)
             entity_obj.async_write_ha_state()
+            # Notify Status sensor if this is a Chore
+            if isinstance(entity_obj.device, ChoreDevice):
+                if hasattr(entity_obj.device, "status_sensor_entity"):
+                    entity_obj.device.status_sensor_entity.async_write_ha_state()
 
     hass.services.async_register(DOMAIN, SERVICE_SET_VALUE, async_set_value_service)
 
@@ -69,6 +77,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if entity_obj:
             await entity_obj.async_set_value(value)
             entity_obj.async_write_ha_state()
+            # Notify Status sensor if this is a Chore
+            if isinstance(entity_obj.device, ChoreDevice):
+                if hasattr(entity_obj.device, "status_sensor_entity"):
+                    entity_obj.device.status_sensor_entity.async_write_ha_state()
 
     hass.services.async_register(DOMAIN, SERVICE_SET_DATETIME, async_set_datetime_service)
 
@@ -99,6 +111,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
                 # Refresh all linked entities
                 for entity in data["device_entity_map"].values():
                     entity.async_write_ha_state()
+                # Notify Status sensor
+                if hasattr(dev, "status_sensor_entity"):
+                    dev.status_sensor_entity.async_write_ha_state()
 
                 # Add points to user's Score device
                 for sdata in hass.data[DOMAIN].values():
