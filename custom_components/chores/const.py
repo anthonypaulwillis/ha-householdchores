@@ -1,4 +1,4 @@
-DOMAIN = "chores"
+DOMAIN = "householdchores"
 PLATFORMS = ["sensor", "number", "datetime"]
 
 DEVICE_TYPE_CHORE = "chore"
