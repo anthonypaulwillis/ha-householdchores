@@ -9,8 +9,23 @@ DEVICE_SCHEMA = vol.Schema({
 })
 
 
-class ChoresConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ChoresConfigFlow(config_entries.ConfigFlow, domain="chores"):
     async def async_step_user(self, user_input=None):
+        errors = {}
         if user_input is not None:
             return self.async_create_entry(title=user_input["name"], data=user_input)
-        return self.async_show_form(step_id="user", data_schema=DEVICE_SCHEMA)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({
+                vol.Required("name"): str,
+                vol.Required(
+                    "device_type",
+                    default=DEVICE_TYPE_CHORE
+                ): vol.In({
+                    DEVICE_TYPE_CHORE: "Chore",
+                    DEVICE_TYPE_SCORE: "Score"
+                })
+            }),
+            errors=errors
+        )
