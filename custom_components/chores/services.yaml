@@ -1,23 +1,17 @@
-set_value:
-    name: Set Value
-    description: Set a field on a Chore or Score device
-    fields:
-        entity_id:
-            description: Target entity
-            example: sensor.kitchen_cleaning_points
-        value:
-            description: Value to set
-            example: 5
-            
 set_datetime:
-    name: Set Chore Datetime
-    description: Set a datetime field on a Chore device
-    fields:
-        entity_id:
-            description: Target datetime entity (Next Due Date or Late Done Date)
-            example: datetime.kitchen_cleaning_next_due_date
-            required: true
-        value:
-            description: Datetime value to set (ISO 8601 format)
-            example: '2025-10-01T15:00:00'
-            required: true
+  name: Set Chore Datetime
+  description: Set a datetime field on a Chore device
+  fields:
+    entity_id:
+      name: Target Datetime
+      description: Pick a datetime entity (Next Due Date or Last Done Date)
+      required: true
+      selector:
+        entity:
+          domain: datetime
+    value:
+      name: New Date/Time
+      description: The datetime to set
+      required: true
+      selector:
+        datetime: {}
