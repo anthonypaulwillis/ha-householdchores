@@ -15,11 +15,7 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
 
     async_add_entities(entities, True)
 
-
 class ChoresTextEntity(ChoresEntity, TextEntity):
-    def __init__(self, device, attr_name, name, entry_id):
-        super().__init__(device, attr_name, name, entry_id)
-
     @property
     def native_value(self):
         return getattr(self._device, self._attr_name, "")
@@ -28,15 +24,9 @@ class ChoresTextEntity(ChoresEntity, TextEntity):
         setattr(self._device, self._attr_name, value)
         if hasattr(self._device, "status_sensor_entity") and self._device.status_sensor_entity:
             self._device.status_sensor_entity.async_write_ha_state()
-        await self._persist_state()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
         if last_state := await self.async_get_last_state():
             setattr(self._device, self._attr_name, last_state.state)
-
-    async def _persist_state(self):
-        entry = self.hass.data[DOMAIN][self._entry_id]["entry"]
-        from ..__init__ import persist_device_state
-        await persist_device_state(entry, self._device)
