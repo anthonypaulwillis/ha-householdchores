@@ -3,8 +3,8 @@
   "name": "Household Chores",
   "version": "1.2.3",
   "config_flow": true,
-  "documentation": "https://github.com/yourrepo/ha-householdchores",
-  "issue_tracker": "https://github.com/yourrepo/ha-householdchores/issues",
+  "documentation": "https://github.com/anthonypaulwillis/ha-householdchores",
+  "issue_tracker": "https://github.com/anthonypaulwillis/ha-householdchores/issues",
   "codeowners": ["@anthonypaulwillis"],
   "requirements": []
 }
