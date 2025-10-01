@@ -1,29 +1,24 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .const import DOMAIN, ATTR_STATUS
-from .entity import ChoresEntity
+from homeassistant.util.dt import utcnow
+from datetime import timedelta
+from .const import DOMAIN
 from .device import ChoreDevice
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    if hass.data[DOMAIN][entry.entry_id].get("sensor_entities_added"):
-        return
-
     device = hass.data[DOMAIN][entry.entry_id]["device"]
-    entities = []
 
     if isinstance(device, ChoreDevice):
-        status_sensor = ChoresStatusSensor(device, ATTR_STATUS, "Status", entry.entry_id)
-        entities.append(status_sensor)
-        hass.data[DOMAIN][entry.entry_id]["device_entity_map"][status_sensor.entity_id] = status_sensor
+        entity = ChoreStatusSensor(device, entry.entry_id)
+        async_add_entities([entity], True)
 
-    async_add_entities(entities, True)
-    hass.data[DOMAIN][entry.entry_id]["sensor_entities_added"] = True
 
-class ChoresStatusSensor(ChoresEntity, SensorEntity):
-    def __init__(self, device, attr_name, name, entry_id):
-        super().__init__(device, attr_name, name, entry_id)
-        self._device.status_sensor_entity = self
+class ChoreStatusSensor(SensorEntity):
+    def __init__(self, device: ChoreDevice, entry_id: str):
+        self._device = device
+        self._attr_unique_id = f"{entry_id}_status"
+        self._attr_name = f"{device.name} Status"
 
     @property
     def native_value(self):
