@@ -18,29 +18,29 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    device_type = entry.data.get("device_type")
-    name = entry.data.get("name")
+    data = entry.data
+    options = entry.options or {}
 
-    # Create device
+    device_type = data.get("device_type")
+    name = data.get("name")
+
+    # Initialize device attributes from options or defaults
+    points = options.get("points", 5)
+    days = options.get("days", 7)
+    last_done_date = parse_datetime(options.get("last_done_date")) if options.get("last_done_date") else utcnow()
+    next_due_date = parse_datetime(options.get("next_due_date")) if options.get("next_due_date") else last_done_date + timedelta(days=days)
+
     if device_type == DEVICE_TYPE_CHORE:
-        device = ChoreDevice(name)
+        device = ChoreDevice(
+            name=name,
+            points=points,
+            days=days,
+            last_done_date=last_done_date,
+            next_due_date=next_due_date,
+        )
     else:
-        device = ScoreDevice(name)
+        device = ScoreDevice(name=name, points=points)
 
-    # Auto-create Score devices for all users if Chore is added
-    if device_type == DEVICE_TYPE_CHORE:
-        # Attempt to create a Score device with same name as user if not exists
-        existing_scores = [d._device.name for d in hass.data[DOMAIN].values() if getattr(d, "device_type", None) == DEVICE_TYPE_SCORE]
-        if name not in existing_scores:
-            score_device = ScoreDevice(name)
-            entry_id_score = f"{entry.entry_id}_score_{name.replace(' ', '_')}"
-            hass.data[DOMAIN][entry_id_score] = {
-                "device": score_device,
-                "device_entity_map": {},
-                "entry": entry
-            }
-
-    # Store the device
     hass.data[DOMAIN][entry.entry_id] = {
         "device": device,
         "device_entity_map": {},
@@ -82,14 +82,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         device = call.data["device"]
         if getattr(device, "device_type", None) != DEVICE_TYPE_CHORE:
             return
+
         chore_device = device
         now_time = utcnow()
         chore_device.last_done_date = now_time
         chore_device.next_due_date = now_time + timedelta(days=chore_device.days)
+
+        # Trigger status sensor update
         if chore_device.status_sensor_entity:
             chore_device.status_sensor_entity.async_write_ha_state()
 
-        # Find Score device for current user
+        # Find Score device for user (matching the same name as chore owner)
         for entry_data in hass.data[DOMAIN].values():
             dev = entry_data["device"]
             if getattr(dev, "device_type", None) == DEVICE_TYPE_SCORE and dev.name == call.context.user_name:
