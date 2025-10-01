@@ -36,3 +36,4 @@ class ScoreDevice:
         self.device_type = DEVICE_TYPE_SCORE
         self.device_id = f"scores_{name.lower().replace(' ', '_')}"
         self.points = 0
+        self.status_sensor_entity = None
