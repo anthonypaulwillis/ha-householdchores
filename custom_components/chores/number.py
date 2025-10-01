@@ -22,4 +22,16 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
 
 class ChoresNumberEntity(ChoresEntity, NumberEntity):
     def __init__(self, device, attr_name, name, entry_id, min_value=0, max_value=100):
-        super().__init
+        super().__init__(device, attr_name, name, entry_id)
+        self._attr_min_value = min_value
+        self._attr_max_value = max_value
+
+    @property
+    def native_value(self):
+        return getattr(self._device, self._attr_name)
+
+    async def async_set_native_value(self, value: float):
+        setattr(self._device, self._attr_name, value)
+        self.async_write_ha_state()
+        if hasattr(self._device, "status_sensor_entity") and self._device.status_sensor_entity:
+            self._device.status_sensor_entity.async_write_ha_state()
