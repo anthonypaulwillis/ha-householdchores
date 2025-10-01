@@ -2,12 +2,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import ATTR_ENTITY_ID
-from homeassistant.util.dt import utcnow, parse_datetime
+from homeassistant.util.dt import parse_datetime
 
 from .const import DOMAIN, PLATFORMS, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE
 from .device import ChoreDevice, ScoreDevice
 
 SERVICE_SET_DATETIME = "set_datetime"
+SERVICE_SET_VALUE = "set_value"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType):
@@ -30,7 +31,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "device_entity_map": {},
     }
 
-    # Integration-level service for updating datetimes
+    # --- Service: set_value ---
+    async def async_set_value_service(call):
+        entity_id = call.data[ATTR_ENTITY_ID]
+        value = call.data["value"]
+
+        entity_obj = hass.data[DOMAIN][entry.entry_id]["device_entity_map"].get(entity_id)
+        if entity_obj:
+            await entity_obj.async_set_value(value)
+            entity_obj.async_write_ha_state()
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_VALUE,
+        async_set_value_service
+    )
+
+    # --- Service: set_datetime ---
     async def async_set_datetime_service(call):
         entity_id = call.data[ATTR_ENTITY_ID]
         value_str = call.data["value"]
