@@ -2,7 +2,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import ATTR_ENTITY_ID
-from homeassistant.util.dt import parse_datetime, utcnow, now
+from homeassistant.util.dt import parse_datetime, utcnow
 from datetime import timedelta
 
 from .const import DOMAIN, PLATFORMS, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE
@@ -17,22 +17,30 @@ async def async_setup(hass: HomeAssistant, config: ConfigType):
         hass.data[DOMAIN] = {}
     return True
 
-async def persist_device_state(entry, device):
-    """Persist device state in Home Assistant."""
-    entry_id = entry.entry_id
-    if DOMAIN in entry.hass.data and entry_id in entry.hass.data[DOMAIN]:
-        entry.hass.data[DOMAIN][entry_id]["device"] = device
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     device_type = entry.data.get("device_type")
     name = entry.data.get("name")
 
+    # Create device
     if device_type == DEVICE_TYPE_CHORE:
         device = ChoreDevice(name)
     else:
         device = ScoreDevice(name)
 
-    # Store device and map
+    # Auto-create Score devices for all users if Chore is added
+    if device_type == DEVICE_TYPE_CHORE:
+        # Attempt to create a Score device with same name as user if not exists
+        existing_scores = [d._device.name for d in hass.data[DOMAIN].values() if getattr(d, "device_type", None) == DEVICE_TYPE_SCORE]
+        if name not in existing_scores:
+            score_device = ScoreDevice(name)
+            entry_id_score = f"{entry.entry_id}_score_{name.replace(' ', '_')}"
+            hass.data[DOMAIN][entry_id_score] = {
+                "device": score_device,
+                "device_entity_map": {},
+                "entry": entry
+            }
+
+    # Store the device
     hass.data[DOMAIN][entry.entry_id] = {
         "device": device,
         "device_entity_map": {},
@@ -43,8 +51,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     async def async_set_value_service(call):
         entity_id = call.data[ATTR_ENTITY_ID]
         value = call.data["value"]
-
-        entity_obj = hass.data[DOMAIN][entry.entry_id]["device_entity_map"].get(entity_id)
+        entity_obj = None
+        for entry_data in hass.data[DOMAIN].values():
+            entity_obj = entry_data["device_entity_map"].get(entity_id)
+            if entity_obj:
+                break
         if entity_obj:
             await entity_obj.async_set_native_value(value)
             entity_obj.async_write_ha_state()
@@ -54,10 +65,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # --- Service: set_datetime ---
     async def async_set_datetime_service(call):
         entity_id = call.data[ATTR_ENTITY_ID]
-        value_str = call.data["value"]
-        value = parse_datetime(value_str)
-
-        entity_obj = hass.data[DOMAIN][entry.entry_id]["device_entity_map"].get(entity_id)
+        value = parse_datetime(call.data["value"])
+        entity_obj = None
+        for entry_data in hass.data[DOMAIN].values():
+            entity_obj = entry_data["device_entity_map"].get(entity_id)
+            if entity_obj:
+                break
         if entity_obj:
             await entity_obj.async_set_native_value(value)
             entity_obj.async_write_ha_state()
@@ -66,23 +79,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # --- Service: complete_chore ---
     async def async_complete_chore_service(call):
-        entity_id = call.data[ATTR_ENTITY_ID]
-        entity_obj = hass.data[DOMAIN][entry.entry_id]["device_entity_map"].get(entity_id)
-        if entity_obj and entity_obj._device.device_type == DEVICE_TYPE_CHORE:
-            chore_device = entity_obj._device
-            now_time = utcnow()
-            chore_device.last_done_date = now_time
-            chore_device.next_due_date = now_time + timedelta(days=chore_device.days)
-            if hasattr(chore_device, "status_sensor_entity") and chore_device.status_sensor_entity:
-                chore_device.status_sensor_entity.async_write_ha_state()
+        device = call.data["device"]
+        if getattr(device, "device_type", None) != DEVICE_TYPE_CHORE:
+            return
+        chore_device = device
+        now_time = utcnow()
+        chore_device.last_done_date = now_time
+        chore_device.next_due_date = now_time + timedelta(days=chore_device.days)
+        if chore_device.status_sensor_entity:
+            chore_device.status_sensor_entity.async_write_ha_state()
 
-            # Add points to matching Score device
-            for eid, obj in hass.data[DOMAIN][entry.entry_id]["device_entity_map"].items():
-                if obj._device.device_type == DEVICE_TYPE_SCORE and obj._device.name == call.context.user_name:
-                    obj._device.points += chore_device.points
-                    obj.async_write_ha_state()
-
-            await persist_device_state(entry, chore_device)
+        # Find Score device for current user
+        for entry_data in hass.data[DOMAIN].values():
+            dev = entry_data["device"]
+            if getattr(dev, "device_type", None) == DEVICE_TYPE_SCORE and dev.name == call.context.user_name:
+                dev.points += chore_device.points
+                if hasattr(dev, "status_sensor_entity") and dev.status_sensor_entity:
+                    dev.status_sensor_entity.async_write_ha_state()
 
     hass.services.async_register(DOMAIN, SERVICE_COMPLETE_CHORE, async_complete_chore_service)
 
