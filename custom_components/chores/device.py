@@ -38,4 +38,4 @@ class ScoreDevice:
     def __init__(self, name: str):
         self.name = name
         self.device_id = f"chores_{name.lower().replace(' ', '_')}"
-        self.points = 5  # Default points for Score
+        self.points = 0  # Default points for Score
