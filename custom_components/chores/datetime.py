@@ -3,8 +3,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .entity import ChoresEntity
-from homeassistant.util.dt import utcnow
-from datetime import timedelta
 
 async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     device = hass.data[DOMAIN][entry.entry_id]["device"]
@@ -28,7 +26,4 @@ class ChoresDatetimeEntity(ChoresEntity, DatetimeEntity):
         return getattr(self._device, self._attr_name)
 
     async def async_set_native_value(self, value):
-        setattr(self._device, self._attr_name, value)
-        self.async_write_ha_state()
-        if hasattr(self._device, "status_sensor_entity") and self._device.status_sensor_entity:
-            self._device.status_sensor_entity.async_write_ha_state()
+        await super().async_set_native_value(value)
