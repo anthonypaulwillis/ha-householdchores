@@ -1,98 +1,69 @@
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.util.dt import parse_datetime, utcnow
 from datetime import timedelta
 
-from .const import DOMAIN, PLATFORMS, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE, ATTR_POINTS, ATTR_DAYS, ATTR_LAST_DONE_DATE, ATTR_NEXT_DUE_DATE
+from .const import DOMAIN, PLATFORMS, DEVICE_TYPE_CHORE, DEVICE_TYPE_SCORE
 from .device import ChoreDevice, ScoreDevice
 
 SERVICE_SET_VALUE = "set_value"
 SERVICE_SET_DATETIME = "set_datetime"
 SERVICE_COMPLETE_CHORE = "complete_chore"
 
-async def async_setup(hass: HomeAssistant, config: ConfigType):
+
+async def async_setup(hass: HomeAssistant, config):
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
     return True
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    data = entry.data
-    options = entry.options or {}
-
-    device_type = data.get("device_type")
-    name = data.get("name")
-
-    points = options.get(ATTR_POINTS, 5)
-    days = options.get(ATTR_DAYS, 7)
-    last_done_date = parse_datetime(options.get(ATTR_LAST_DONE_DATE)) if options.get(ATTR_LAST_DONE_DATE) else utcnow()
-    next_due_date = parse_datetime(options.get(ATTR_NEXT_DUE_DATE)) if options.get(ATTR_NEXT_DUE_DATE) else last_done_date + timedelta(days=days)
+    device_type = entry.data.get("device_type")
+    name = entry.data.get("name")
 
     if device_type == DEVICE_TYPE_CHORE:
-        device = ChoreDevice(name=name, points=points, days=days, last_done_date=last_done_date, next_due_date=next_due_date)
+        device = ChoreDevice(name, entry.options)
     else:
-        device = ScoreDevice(name=name, points=points)
+        device = ScoreDevice(name, entry.options)
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        "device": device,
-        "device_entity_map": {},
-        "entry": entry,
-    }
+    hass.data[DOMAIN][entry.entry_id] = {"device": device}
 
-    # --- Services ---
-    async def async_set_value_service(call):
-        entity_id = call.data[ATTR_ENTITY_ID]
-        value = call.data["value"]
-        entity_obj = None
-        for entry_data in hass.data[DOMAIN].values():
-            entity_obj = entry_data["device_entity_map"].get(entity_id)
-            if entity_obj:
-                break
-        if entity_obj:
-            await entity_obj.async_set_native_value(value)
-            entity_obj.async_write_ha_state()
+    # --- Service: set_value ---
+    async def async_set_value(call: ServiceCall):
+        field = call.data.get("field")
+        value = call.data.get("value")
+        new_options = dict(entry.options)
+        new_options[field] = value
+        hass.config_entries.async_update_entry(entry, options=new_options)
 
-    hass.services.async_register(DOMAIN, SERVICE_SET_VALUE, async_set_value_service)
+    hass.services.async_register(DOMAIN, SERVICE_SET_VALUE, async_set_value)
 
-    async def async_set_datetime_service(call):
-        entity_id = call.data[ATTR_ENTITY_ID]
-        value = parse_datetime(call.data["value"])
-        entity_obj = None
-        for entry_data in hass.data[DOMAIN].values():
-            entity_obj = entry_data["device_entity_map"].get(entity_id)
-            if entity_obj:
-                break
-        if entity_obj:
-            await entity_obj.async_set_native_value(value)
-            entity_obj.async_write_ha_state()
+    # --- Service: set_datetime ---
+    async def async_set_datetime(call: ServiceCall):
+        field = call.data.get("field")
+        value_str = call.data.get("value")
+        value = parse_datetime(value_str)
+        new_options = dict(entry.options)
+        new_options[field] = value
+        hass.config_entries.async_update_entry(entry, options=new_options)
 
-    hass.services.async_register(DOMAIN, SERVICE_SET_DATETIME, async_set_datetime_service)
+    hass.services.async_register(DOMAIN, SERVICE_SET_DATETIME, async_set_datetime)
 
-    async def async_complete_chore_service(call):
-        device = call.data["device"]
-        if getattr(device, "device_type", None) != DEVICE_TYPE_CHORE:
-            return
+    # --- Service: complete_chore ---
+    async def async_complete_chore(call: ServiceCall):
+        now = utcnow()
+        new_options = dict(entry.options)
+        new_options["last_done_date"] = now
+        days = int(new_options.get("days", 7))
+        new_options["next_due_date"] = now + timedelta(days=days)
+        hass.config_entries.async_update_entry(entry, options=new_options)
 
-        now_time = utcnow()
-        device.last_done_date = now_time
-        device.next_due_date = now_time + timedelta(days=device.days)
-
-        if device.status_sensor_entity:
-            device.status_sensor_entity.async_write_ha_state()
-
-        # Add points to matching Score device
-        for entry_data in hass.data[DOMAIN].values():
-            dev = entry_data["device"]
-            if getattr(dev, "device_type", None) == DEVICE_TYPE_SCORE and dev.name == call.context.user_name:
-                dev.points += device.points
-                if hasattr(dev, "status_sensor_entity") and dev.status_sensor_entity:
-                    dev.status_sensor_entity.async_write_ha_state()
-
-    hass.services.async_register(DOMAIN, SERVICE_COMPLETE_CHORE, async_complete_chore_service)
+    hass.services.async_register(DOMAIN, SERVICE_COMPLETE_CHORE, async_complete_chore)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
