@@ -1,41 +1,26 @@
 set_value:
   name: Set Value
-  description: Set a numeric or text field on a Chore or Score device
+  description: Set a field on a Chore or Score device
   fields:
-    entity:
-      description: Target entity (Number or Text)
-      example: number.kitchen_cleaning_points
-      selector:
-        entity:
-          domain: ["number", "text"]
+    field:
+      description: Field name (e.g. days, points, last_done_by)
+      example: points
     value:
       description: Value to set
       example: 5
-      required: true
 
 set_datetime:
-  name: Set Chore Datetime
+  name: Set Datetime
   description: Set a datetime field on a Chore device
   fields:
-    entity:
-      description: Target datetime entity (Next Due Date or Last Done Date)
-      example: datetime.kitchen_cleaning_next_due_date
-      selector:
-        entity:
-          domain: ["datetime"]
-      required: true
+    field:
+      description: Datetime field (last_done_date or next_due_date)
+      example: next_due_date
     value:
-      description: Datetime value to set (ISO 8601 format)
-      example: '2025-10-01T15:00:00'
-      required: true
+      description: Datetime in ISO 8601 format
+      example: "2025-10-01T15:00:00"
 
 complete_chore:
   name: Complete Chore
-  description: Marks a Chore as completed, updates next due date, and adds points to the user’s Score
-  fields:
-    device:
-      description: Chore device to complete
-      selector:
-        device:
-          integration: chores
-      required: true
+  description: Marks a chore as completed, updates last and next dates
+  fields: {}
