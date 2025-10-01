@@ -2,18 +2,19 @@ from datetime import timedelta
 from homeassistant.util.dt import utcnow
 
 class ChoreDevice:
-    def __init__(self, name: str):
+    """Chore device with reactive Status sensor and persistence support."""
+
+    def __init__(self, name: str, points: int = 5, days: int = 7,
+                 last_done_date=None, next_due_date=None, last_done_by=""):
         self.name = name
         self.device_id = f"chores_{name.lower().replace(' ', '_')}"
 
-        # Default values
-        self.points = 5
-        self.days = 7
-        self.last_done_by = ""
-
-        # Dates: last done = now, next due = 7 days from now
-        self.last_done_date = utcnow()
-        self.next_due_date = utcnow() + timedelta(days=self.days)
+        # Defaults or restored values
+        self.points = points
+        self.days = days
+        self.last_done_by = last_done_by
+        self.last_done_date = last_done_date or utcnow()
+        self.next_due_date = next_due_date or (utcnow() + timedelta(days=self.days))
 
         # Status
         self.status = "not due"
@@ -35,6 +36,8 @@ class ChoreDevice:
 
 
 class ScoreDevice:
-    def __init__(self, name: str):
+    """Score device for a user, with persistent points."""
+
+    def __init__(self, name: str, points: int = 0):
         self.name = name
-        self.points = 0
+        self.points = points
