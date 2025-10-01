@@ -1,27 +1,27 @@
 from datetime import timedelta
 from homeassistant.util.dt import utcnow
 
-
 class ChoreDevice:
     def __init__(self, name: str):
         self.name = name
         self.device_id = f"chores_{name.lower().replace(' ', '_')}"
-        self.points = 5                # Default points
-        self.days = 7                  # Default repeat interval
-        self.last_done_by = ""         # Who last completed it (if tracked)
 
-        now = utcnow()
-        self.last_done_date = now      # Default to "done now"
-        self.next_due_date = now + timedelta(days=self.days)  # Default to 7 days later
+        # Default values
+        self.points = 5
+        self.days = 7
+        self.last_done_by = ""
 
-        self.last_days_overdue = 0
-        self.status = "unknown"
+        # Dates: last done = now, next due = 7 days from now
+        self.last_done_date = utcnow()
+        self.next_due_date = utcnow() + timedelta(days=self.days)
+
+        # Status
+        self.status = "not due"
+        self.status_sensor_entity = None  # Will be set by sensor platform
 
     def update_status(self):
-        """Update the chore's status based on due/last done dates."""
+        """Compute status based on last_done_date and next_due_date."""
         now = utcnow()
-
-        # If just done in the last 10 minutes
         if self.last_done_date and (now - self.last_done_date).total_seconds() < 600:
             self.status = "recent"
         elif self.next_due_date:
@@ -37,5 +37,4 @@ class ChoreDevice:
 class ScoreDevice:
     def __init__(self, name: str):
         self.name = name
-        self.device_id = f"chores_{name.lower().replace(' ', '_')}"
-        self.points = 0  # Default points for Score
+        self.points = 0
