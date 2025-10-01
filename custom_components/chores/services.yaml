@@ -1,3 +1,23 @@
+set_value:
+  name: Set Value
+  description: Set a field on a Chore or Score device
+  fields:
+    entity_id:
+      name: Target Entity
+      description: Choose a number (points/days) or text (last done by) entity
+      required: true
+      selector:
+        entity:
+          domain:
+            - number
+            - text
+    value:
+      name: Value
+      description: The new value to set
+      required: true
+      selector:
+        text: {}  # UI will auto-adapt based on entity (text/number)
+
 set_datetime:
   name: Set Chore Datetime
   description: Set a datetime field on a Chore device
@@ -15,3 +35,16 @@ set_datetime:
       required: true
       selector:
         datetime: {}
+
+
+complete_chore:
+  name: Complete Chore
+  description: Mark a chore as completed now and update due dates
+  fields:
+    device_id:
+      name: Chore device
+      description: The Chore device to complete
+      required: true
+      selector:
+        device:
+          integration: chores
