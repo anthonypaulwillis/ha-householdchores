@@ -20,11 +20,8 @@ async def async_setup_entry(hass, entry: ConfigEntry, async_add_entities: AddEnt
     async_add_entities(entities, True)
     hass.data[DOMAIN][entry.entry_id]["sensor_entities_added"] = True
 
-
 class ChoresStatusSensor(ChoresEntity, SensorEntity):
-    """Reactive Status sensor for Chore devices."""
-
-    def __init__(self, device: ChoreDevice, attr_name: str, name: str, entry_id: str):
+    def __init__(self, device, attr_name, name, entry_id):
         super().__init__(device, attr_name, name, entry_id)
         self._device.status_sensor_entity = self
 
@@ -32,7 +29,3 @@ class ChoresStatusSensor(ChoresEntity, SensorEntity):
     def native_value(self):
         self._device.update_status()
         return self._device.status
-
-    @property
-    def should_poll(self):
-        return False
