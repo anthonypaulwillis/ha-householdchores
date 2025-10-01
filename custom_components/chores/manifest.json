@@ -1,5 +1,5 @@
 {
-  "domain": "chores",
+  "domain": "householdchores",
   "name": "Household Chores",
   "version": "1.2.0",
   "config_flow": true,
