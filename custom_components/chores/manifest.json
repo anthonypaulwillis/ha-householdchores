@@ -5,8 +5,6 @@
   "config_flow": true,
   "documentation": "https://github.com/yourrepo/ha-householdchores",
   "issue_tracker": "https://github.com/yourrepo/ha-householdchores/issues",
-  "codeowners": ["@yourgithub"],
-  "iot_class": "local_push",
-  "logo": "brands/chores/logo.png",
+  "codeowners": ["@anthonypaulwillis"],
   "requirements": []
 }
